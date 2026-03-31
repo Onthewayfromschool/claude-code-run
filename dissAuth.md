@@ -99,6 +99,14 @@ bun run dev
 
 ---
 
+## 别人 `git clone` 后仍出现 Not logged in？
+
+- **仓库里不包含、也不应包含**任何 API Key；每人只在**自己电脑的** `~/.claude/settings.json`（或 shell 环境变量）里配置 `ANTHROPIC_*` / Kimi 等。
+- 克隆代码 ≠ 自动拥有鉴权；未配置时提示 `/login` 是正常现象。
+- 让对方按 README 里 **「克隆本仓库的人为什么仍会提示…」** 一小节逐步配置即可。
+
+---
+
 ## 相关文件路径（便于检索）
 
 - `src/components/Onboarding.tsx`

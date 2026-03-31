@@ -77,6 +77,24 @@ bun run version  # 输出版本号
 
 > 完整鉴权改动原理与涉及文件说明见 [`dissAuth.md`](dissAuth.md)。
 
+### 克隆本仓库的人为什么仍会提示「Not logged in」/ `/login`？
+
+**不是因为缺代码**：补丁已在仓库里；**是因为密钥与全局配置不会随 Git 分发。**
+
+| 原因 | 说明 |
+|------|------|
+| 密钥不在仓库里 | `ANTHROPIC_API_KEY` 等绝不能提交到 Git。每人需在**自己机器**上配置。 |
+| `~/.claude/settings.json` 是个人目录 | 该文件在用户主目录，**克隆项目不会带上**，拉代码后默认没有任何 API 配置。 |
+| 未配置时的表现 | 没有有效 Key / 未走官方登录时，界面仍可能提示 **Not logged in**、**请运行 `/login`**，这是预期行为。 |
+
+**请把下面这段话发给协作者（或让对方读本节）：**
+
+1. `git clone` 后执行 `bun install`，再 `bun run dev`。  
+2. 在**本机**创建或编辑 `~/.claude/settings.json`，至少写入 `env`（Kimi 示例见上文 JSON；若用官方 Anthropic，需自行查阅官方文档配置 Key 或执行 `/login`）。  
+3. 首次运行若出现工作区信任对话框，需通过之后，`settings.json` 里的 `env` 才会注入进程。  
+4. （可选）不想走首次引导时：`export CLAUDE_CODE_SKIP_ONBOARDING=1` 再启动。  
+5. 仍报错时：确认 `ANTHROPIC_BASE_URL` 与 Key 成对、且 Base URL 不是官方域名时才会走本仓库的「第三方直连」逻辑；详情见 [`dissAuth.md`](dissAuth.md)。
+
 ## 目录结构
 
 ```
