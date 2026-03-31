@@ -42,7 +42,11 @@ bun run version
 
 默认交互模式下，仅把 Key 写在配置里可能仍被当作「未登录」。本仓库已调整鉴权与 Key 校验逻辑，使**非 Anthropic 官方** `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_API_KEY` 在交互 TUI 中可直接生效；完整背景、涉及文件与安全说明见 **[`dissAuth.md`](dissAuth.md)**。
 
-**本机配置示例**（`~/.claude/settings.json` 的 `env`，勿将真实密钥提交到 Git）：
+#### 配置步骤
+
+**第一步**：去 [Kimi 开放平台](https://platform.moonshot.cn/) 生成一个 API Key（格式为 `sk-...`）
+
+**第二步**：创建 `~/.claude/settings.json`，填入你的 Key（勿将真实密钥提交到 Git）：
 
 ```json
 {
@@ -54,7 +58,22 @@ bun run version
 }
 ```
 
-**可选环境变量**：若希望跳过首次引导界面，可在启动前执行 `export CLAUDE_CODE_SKIP_ONBOARDING=1`（写入 `hasCompletedOnboarding`，详见 `dissAuth.md`）。
+**第三步**：跳过首次引导界面，然后启动：
+
+```bash
+export CLAUDE_CODE_SKIP_ONBOARDING=1
+bun run dev
+```
+
+或者把环境变量写入 Shell 配置（只需执行一次）：
+
+```bash
+echo 'export CLAUDE_CODE_SKIP_ONBOARDING=1' >> ~/.zshrc
+source ~/.zshrc
+bun run dev
+```
+
+> 完整原理与涉及文件说明见 [`dissAuth.md`](dissAuth.md)。
 
 ## 目录结构
 
