@@ -15,6 +15,7 @@
 - `bun install` 可成功安装依赖
 - `bun run version` 可正常输出版本号
 - `bun run dev` 可启动还原后的 CLI 入口，作为交互式进程运行
+- 本仓库包含若干**可选补丁**：减少官方 OAuth 依赖、支持通过 `ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY` 使用 [Kimi Code](https://www.kimi.com/code/docs/more/third-party-agents.html) 等 Anthropic 兼容端点（详见下方与 [`dissAuth.md`](dissAuth.md)）
 
 ## 基本信息
 
@@ -36,6 +37,24 @@ bun run dev
 # 输出版本号
 bun run version
 ```
+
+### 第三方 API（可选）：Kimi 等兼容端点
+
+默认交互模式下，仅把 Key 写在配置里可能仍被当作「未登录」。本仓库已调整鉴权与 Key 校验逻辑，使**非 Anthropic 官方** `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_API_KEY` 在交互 TUI 中可直接生效；完整背景、涉及文件与安全说明见 **[`dissAuth.md`](dissAuth.md)**。
+
+**本机配置示例**（`~/.claude/settings.json` 的 `env`，勿将真实密钥提交到 Git）：
+
+```json
+{
+  "env": {
+    "ENABLE_TOOL_SEARCH": "false",
+    "ANTHROPIC_BASE_URL": "https://api.kimi.com/coding/",
+    "ANTHROPIC_API_KEY": "sk-kimi-你的密钥"
+  }
+}
+```
+
+**可选环境变量**：若希望跳过首次引导界面，可在启动前执行 `export CLAUDE_CODE_SKIP_ONBOARDING=1`（写入 `hasCompletedOnboarding`，详见 `dissAuth.md`）。
 
 ## 目录结构
 
@@ -66,6 +85,7 @@ bun run version
 ├── vendor/                 # 原生绑定源码
 ├── package.json            # 项目配置
 ├── tsconfig.json           # TypeScript 配置
+├── dissAuth.md             # 第三方 API / 鉴权补丁说明（Kimi、跳过引导等）
 └── bun.lock                # 依赖锁文件
 ```
 
