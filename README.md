@@ -1,6 +1,6 @@
-# Claude Code 源码还原
+# Claude Code 源码改造 运行
 
-> 从 source map 还原并可运行的 Claude Code CLI 完整 TypeScript 源码
+> 从 source map 还原并可运行的 Claude Code CLI 完整 TypeScript 源码，配合 Kimi API 即可完整跑通
 
 ![预览](preview.png)
 
@@ -11,11 +11,12 @@
 
 ## 当前状态
 
-- 源码树可还原并可在本地开发流程中运行
-- `bun install` 可成功安装依赖
-- `bun run version` 可正常输出版本号
-- `bun run dev` 可启动还原后的 CLI 入口，作为交互式进程运行
-- 本仓库包含若干**可选补丁**：减少官方 OAuth 依赖、支持通过 `ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY` 使用 [Kimi Code](https://www.kimi.com/code/docs/more/third-party-agents.html) 等 Anthropic 兼容端点（详见下方与 [`dissAuth.md`](dissAuth.md)）
+- ✅ 源码树完整还原，本地可运行
+- ✅ `bun install` 成功安装依赖
+- ✅ `bun run version` 正常输出版本号
+- ✅ `bun run dev` 启动交互式 CLI，配合 Kimi API **完整跑通**
+- ✅ 配合 `claude` 全局命令，可在任意目录直接使用
+- 本仓库包含若干**可选补丁**：绕过官方 OAuth、支持通过 `ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY` 使用 [Kimi Code](https://www.kimi.com/code/docs/more/third-party-agents.html) 等 Anthropic 兼容端点（详见下方与 [`dissAuth.md`](dissAuth.md)）
 
 ## 基本信息
 
@@ -27,26 +28,17 @@
 
 ## 快速开始
 
+### 第一步：安装依赖
+
 ```bash
-# 安装依赖
 bun install
-
-# 启动还原后的 CLI
-bun run dev
-
-# 输出版本号
-bun run version
 ```
 
-### 第三方 API（可选）：Kimi 等兼容端点
+### 第二步：配置 Kimi API Key
 
-默认交互模式下，仅把 Key 写在配置里可能仍被当作「未登录」。本仓库已调整鉴权与 Key 校验逻辑，使**非 Anthropic 官方** `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_API_KEY` 在交互 TUI 中可直接生效；完整背景、涉及文件与安全说明见 **[`dissAuth.md`](dissAuth.md)**。
+原版 Claude Code 需要 Anthropic 官方账号登录，本仓库已修改鉴权逻辑，使用 Kimi API 即可完整跑通。
 
-#### 配置步骤
-
-**第一步**：去 [Kimi 开放平台](https://platform.moonshot.cn/) 生成一个 API Key（格式为 `sk-...`）
-
-**第二步**：创建 `~/.claude/settings.json`，填入你的 Key（勿将真实密钥提交到 Git）：
+去 [Kimi 开放平台](https://platform.moonshot.cn/) 生成 API Key，然后创建 `~/.claude/settings.json`（此文件在用户目录下，不会被 Git 追踪）：
 
 ```json
 {
@@ -58,22 +50,32 @@ bun run version
 }
 ```
 
-**第三步**：跳过首次引导界面，然后启动：
+### 第三步：配置全局命令（推荐）
 
-```bash
-export CLAUDE_CODE_SKIP_ONBOARDING=1
-bun run dev
-```
-
-或者把环境变量写入 Shell 配置（只需执行一次）：
+执行一次，之后在**任意目录**直接输入 `claude` 即可启动：
 
 ```bash
 echo 'export CLAUDE_CODE_SKIP_ONBOARDING=1' >> ~/.zshrc
+echo "alias claude='bun run --cwd /path/to/claude-code-run dev'" >> ~/.zshrc
 source ~/.zshrc
-bun run dev
 ```
 
-> 完整原理与涉及文件说明见 [`dissAuth.md`](dissAuth.md)。
+> 将 `/path/to/claude-code-run` 替换为本仓库的实际克隆路径。
+
+配置完成后，在任意项目目录运行：
+
+```bash
+claude
+```
+
+### 其他命令
+
+```bash
+bun run dev      # 在项目目录内启动
+bun run version  # 输出版本号
+```
+
+> 完整鉴权改动原理与涉及文件说明见 [`dissAuth.md`](dissAuth.md)。
 
 ## 目录结构
 
