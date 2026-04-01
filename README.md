@@ -1,44 +1,57 @@
-# Claude Code 源码改造 运行
+# Claude Code 源码改造 · 可跑 Kimi
 
-> 从 source map 还原并可运行的 Claude Code CLI 完整 TypeScript 源码，配合 Kimi API 即可完整跑通
+> 在 [npm 还原源码](https://www.npmjs.com/package/@anthropic-ai/claude-code) 基础上做了**鉴权与体验向的改造**，配合 **Kimi（Anthropic 兼容协议）** 即可在终端里直接开聊，无需走官方 OAuth。
 
 ![预览](preview.png)
 
 > [!WARNING]
-> 本仓库为**非官方**版本，基于公开 npm 发布包的 source map 还原，**仅供研究学习使用**。
-> 不代表 Anthropic 官方原始内部开发仓库结构。
-> 部分模块因 source map 无法完整还原，已用兼容 shim 或降级实现替代，行为可能与原版有所不同。
+> **非官方**、仅供学习研究；还原与 shim 可能导致行为与上游不一致。上游版权属 [Anthropic](https://www.anthropic.com)。
 
-## 当前状态
+---
 
-- ✅ 源码树完整还原，本地可运行
-- ✅ `bun install` 成功安装依赖
-- ✅ `bun run version` 正常输出版本号
-- ✅ `bun run dev` 启动交互式 CLI，配合 Kimi API **完整跑通**
-- ✅ 配合 `claude` 全局命令，可在任意目录直接使用
-- 本仓库包含若干**可选补丁**：绕过官方 OAuth、支持通过 `ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY` 使用 [Kimi Code](https://www.kimi.com/code/docs/more/third-party-agents.html) 等 Anthropic 兼容端点（详见下方与 [`dissAuth.md`](dissAuth.md)）
+## 相对原版 / 还原版，本仓库做了哪些改造
 
-## 基本信息
+### 1. 登录与「Not logged in」校验（Kimi 等第三方端点）
 
-| 项目 | 说明 |
+目标：**不配官方 Claude 账号也能用**，环境变量里的 Key 在交互 TUI 下真正生效。
+
+| 方向 | 说明 |
 |------|------|
-| 来源 | [@anthropic-ai/claude-code](https://www.npmjs.com/package/@anthropic-ai/claude-code) npm 包 |
-| 源文件数 | 1,987 个 TypeScript/TSX 文件 |
-| 运行时要求 | Bun ≥ 1.3.5、Node.js ≥ 24 |
+| 首次引导 | `Onboarding.tsx` 去掉预检与 OAuth/控制台登录步骤，减少强制登录感。 |
+| 一键跳过引导 | `interactiveHelpers.tsx`：设置 **`CLAUDE_CODE_SKIP_ONBOARDING=1`** 时直接 `completeOnboarding()`。 |
+| 环境 Key 直连 | `auth.ts`：当 `ANTHROPIC_BASE_URL` 指向**非 Anthropic 官方主机**且存在 `ANTHROPIC_API_KEY` 时，**直接采用该 Key**，不要求先写入 `approved` 列表。 |
+| 校验不误伤网关 | `useApiKeyVerification.ts`：上述第三方配置下将 Key 视为 **valid**，跳过对官方 API 的探测请求。 |
+
+细节、文件路径与安全注意见 **[`dissAuth.md`](dissAuth.md)**。
+
+### 2. Buddy（伴侣精灵）与 `/buddy` 命令
+
+| 方向 | 说明 |
+|------|------|
+| 编译开关 | `package.json` 的 `dev` / `start` 默认带 **`bun --feature=BUDDY`**，角落精灵 UI 才会启用。 |
+| 斜杠命令 | `commands/buddy/`：`/buddy` 注册为 **`local-jsx` + `immediate`**，与 `/status` 类似即时弹出界面。 |
+| 档案卡 | `BuddyProfileCard.tsx`：展示精灵 ASCII、稀有度、属性条、性格等；**Esc / Enter** 关闭。 |
+| 逻辑与覆盖 | `buddy-ui.tsx` 处理 `list` / `pick` / `mute` / `reset` 等；`companion.ts` 支持 **`buddySpeciesOverride`** 只改展示物种、不改变稀有度等 roll。 |
+
+### 3. 维护用文档与 Cursor 技能（可选）
+
+- **`docs/YYYY-MM-DD.md`** — 按日开发日志（实现与选型）。
+- **`developerWords/YYYY-MM-DD.md`** — 仅归档开发者侧原话。
+- **`.cursor/skills/daily-record/SKILL.md`** — 收尾流程说明（触发词见该文件 `description`）。
+
+---
 
 ## 快速开始
 
-### 第一步：安装依赖
+**环境：** Bun ≥ 1.3.5、Node.js ≥ 24。
 
 ```bash
 bun install
+bun run dev      # 默认含 --feature=BUDDY
+bun run version
 ```
 
-### 第二步：配置 Kimi API Key
-
-原版 Claude Code 需要 Anthropic 官方账号登录，本仓库已修改鉴权逻辑，使用 Kimi API 即可完整跑通。
-
-去 [Kimi 开放平台](https://platform.moonshot.cn/) 生成 API Key，然后创建 `~/.claude/settings.json`（此文件在用户目录下，不会被 Git 追踪）：
+### 配置 Kimi（`~/.claude/settings.json`，勿提交密钥）
 
 ```json
 {
@@ -50,141 +63,48 @@ bun install
 }
 ```
 
-### 第三步：配置全局命令（推荐）
+[Kimi 与 Claude Code 对接说明](https://www.kimi.com/code/docs/more/third-party-agents.html)
 
-执行一次，之后在**任意目录**直接输入 `claude` 即可启动：
+**可选：** 跳过首次引导界面
+
+```bash
+export CLAUDE_CODE_SKIP_ONBOARDING=1
+```
+
+### 全局命令（可选）
 
 ```bash
 echo 'export CLAUDE_CODE_SKIP_ONBOARDING=1' >> ~/.zshrc
-echo "alias claude='bun run --cwd /path/to/claude-code-run dev'" >> ~/.zshrc
+echo "alias claude='bun run --cwd /path/to/本仓库 dev'" >> ~/.zshrc
 source ~/.zshrc
 ```
 
-> 将 `/path/to/claude-code-run` 替换为本仓库的实际克隆路径。
+将 `/path/to/本仓库` 换成你的克隆路径。
 
-配置完成后，在任意项目目录运行：
+---
 
-```bash
-claude
-```
+## 协作者仍看到「Not logged in」？
 
-### 其他命令
+补丁在仓库里，但 **`~/.claude/settings.json` 和 API Key 不会随 Git 分发**。克隆后每人要在本机配置 `env`（见上文 JSON），通过工作区信任后变量才会注入进程。详见 [`dissAuth.md`](dissAuth.md)。
 
-```bash
-bun run dev      # 在项目目录内启动
-bun run version  # 输出版本号
-```
+---
 
-> 完整鉴权改动原理与涉及文件说明见 [`dissAuth.md`](dissAuth.md)。
-
-### 克隆本仓库的人为什么仍会提示「Not logged in」/ `/login`？
-
-**不是因为缺代码**：补丁已在仓库里；**是因为密钥与全局配置不会随 Git 分发。**
-
-| 原因 | 说明 |
-|------|------|
-| 密钥不在仓库里 | `ANTHROPIC_API_KEY` 等绝不能提交到 Git。每人需在**自己机器**上配置。 |
-| `~/.claude/settings.json` 是个人目录 | 该文件在用户主目录，**克隆项目不会带上**，拉代码后默认没有任何 API 配置。 |
-| 未配置时的表现 | 没有有效 Key / 未走官方登录时，界面仍可能提示 **Not logged in**、**请运行 `/login`**，这是预期行为。 |
-
-**请把下面这段话发给协作者（或让对方读本节）：**
-
-1. `git clone` 后执行 `bun install`，再 `bun run dev`。  
-2. 在**本机**创建或编辑 `~/.claude/settings.json`，至少写入 `env`（Kimi 示例见上文 JSON；若用官方 Anthropic，需自行查阅官方文档配置 Key 或执行 `/login`）。  
-3. 首次运行若出现工作区信任对话框，需通过之后，`settings.json` 里的 `env` 才会注入进程。  
-4. （可选）不想走首次引导时：`export CLAUDE_CODE_SKIP_ONBOARDING=1` 再启动。  
-5. 仍报错时：确认 `ANTHROPIC_BASE_URL` 与 Key 成对、且 Base URL 不是官方域名时才会走本仓库的「第三方直连」逻辑；详情见 [`dissAuth.md`](dissAuth.md)。
-
-## 目录结构
+## 目录（与改造相关的路径）
 
 ```
-├── src/                    # 还原的核心源码
-│   ├── main.tsx            # CLI 主入口
-│   ├── dev-entry.ts        # 开发入口
-│   ├── commands.ts         # 命令注册
-│   ├── commands/           # 斜杠命令实现（100+）
-│   ├── tools/              # 工具实现（50+）
-│   ├── components/         # 终端 UI 组件（React + Ink）
-│   ├── hooks/              # 自定义 React Hooks
-│   ├── services/           # API、MCP、分析等服务
-│   ├── utils/              # 工具函数
-│   ├── ink/                # 自定义 Ink 终端渲染器
-│   ├── vim/                # Vim 模式引擎
-│   ├── bridge/             # 远程桥接/控制
-│   ├── coordinator/        # 多 Agent 协调器
-│   ├── assistant/          # KAIROS 助手模式
-│   ├── buddy/              # 伴侣精灵系统
-│   ├── voice/              # 语音交互
-│   ├── skills/             # 技能系统
-│   ├── plugins/            # 插件系统
-│   ├── remote/             # 远程会话管理
-│   ├── server/             # IDE 集成直连服务器
-│   └── keybindings/        # 快捷键绑定
-├── shims/                  # 兼容性 shim 包（不可还原的原生模块替代）
-├── vendor/                 # 原生绑定源码
-├── package.json            # 项目配置
-├── tsconfig.json           # TypeScript 配置
-├── dissAuth.md             # 第三方 API / 鉴权补丁说明（Kimi、跳过引导等）
-├── docs/                   # 按日的开发日志（YYYY-MM-DD.md）
-├── developerWords/         # 按日的开发者发言归档（YYYY-MM-DD.md）
-└── bun.lock                # 依赖锁文件
+src/utils/auth.ts              # 第三方 Base URL 下直接使用 env Key
+src/hooks/useApiKeyVerification.ts
+src/components/Onboarding.tsx
+src/interactiveHelpers.tsx
+src/buddy/                     # 精灵渲染、roll、BuddyProfileCard
+src/commands/buddy/            # /buddy local-jsx
+dissAuth.md                    # 鉴权改造说明
+docs/ / developerWords/        # 可选维护记录
+.cursor/skills/daily-record/   # 可选 Cursor 技能
 ```
 
-### 日常记录（可选）
-
-维护者可用 **`docs/YYYY-MM-DD.md`** 写实现与选型、**`developerWords/YYYY-MM-DD.md`** 只归档本人发言原文。流程说明见 Cursor 技能 **`.cursor/skills/daily-record/SKILL.md`**（触发词见该文件 frontmatter 的 `description`）。
-
-## 架构概览
-
-### 启动流程
-
-```
-entrypoints/cli.tsx  →  main.tsx  →  REPL 渲染
-     ↓                    ↓
-  快速路径            完整初始化
-(version/daemon)    (auth/MCP/settings/Commander.js)
-```
-
-### 工具系统（`src/tools/`，50+ 个工具）
-
-| 类别 | 工具 |
-|------|------|
-| 文件操作 | `FileReadTool`、`FileWriteTool`、`FileEditTool`、`GlobTool`、`GrepTool` |
-| 执行环境 | `BashTool`、`REPLTool`、`PowerShellTool`、`NotebookEditTool` |
-| 网络 | `WebFetchTool`、`WebSearchTool`、`WebBrowserTool` |
-| AI 协作 | `AgentTool`、`SendMessageTool`、`TeamCreateTool`、`TeamDeleteTool` |
-| 任务管理 | `TaskCreateTool`、`TaskGetTool`、`TaskListTool`、`TaskUpdateTool`、`TaskStopTool` |
-| MCP | `MCPTool`、`McpAuthTool`、`ListMcpResourcesTool`、`ReadMcpResourceTool` |
-| 工作流 | `EnterPlanModeTool`、`ExitPlanModeTool`、`EnterWorktreeTool`、`ExitWorktreeTool` |
-| 其他 | `SkillTool`、`ConfigTool`、`ScheduleCronTool`、`MonitorTool`、`WorkflowTool` |
-
-### 服务层（`src/services/`）
-
-- **`api/`** — Anthropic API 客户端、重试、速率限制、用量追踪
-- **`mcp/`** — MCP 客户端/服务端、OAuth、通道管理
-- **`compact/`** — 会话自动压缩策略
-- **`analytics/`** — GrowthBook 特性开关、Datadog、事件日志
-
-### UI 层
-
-- **`ink/`** — 自定义 Ink 分支，含布局、焦点管理、ANSI 渲染、虚拟滚动
-- **`components/`**（148 文件）— 终端 UI：消息、输入、diff 视图、权限对话框、状态栏
-- **`hooks/`**（87 文件）— React Hooks：工具、语音、IDE、vim、会话、任务
-- **`vim/`** — 完整 vim 键绑定引擎
-
-## 还原说明
-
-Source map 无法完整还原原始仓库，以下内容可能缺失或降级：
-
-- 纯类型文件（type-only files）
-- 构建时生成的文件
-- 私有包装器和原生绑定
-- 动态导入和资源文件
-
-`shims/` 目录包含了对不可还原模块的兼容性替代实现。
+---
 
 ## 声明
 
-- 源码版权归 [Anthropic](https://www.anthropic.com) 所有
-- 本仓库仅用于技术研究与学习，请勿用于商业用途
-- 如有侵权，请联系删除
+- 源码版权归 Anthropic；本仓库用于技术研究与学习，请勿用于商业用途；侵权请联系删除。
