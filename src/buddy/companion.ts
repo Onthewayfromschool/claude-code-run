@@ -8,6 +8,7 @@ import {
   RARITY_WEIGHTS,
   type Rarity,
   SPECIES,
+  type Species,
   STAT_NAMES,
   type StatName,
 } from './types.js'
@@ -125,9 +126,15 @@ export function companionUserId(): string {
 // so species renames and SPECIES-array edits can't break stored companions,
 // and editing config.companion can't fake a rarity.
 export function getCompanion(): Companion | undefined {
-  const stored = getGlobalConfig().companion
+  const config = getGlobalConfig()
+  const stored = config.companion
   if (!stored) return undefined
   const { bones } = roll(companionUserId())
+  const override = config.buddySpeciesOverride
+  const species: Species =
+    override && (SPECIES as readonly string[]).includes(override)
+      ? override
+      : bones.species
   // bones last so stale bones fields in old-format configs get overridden
-  return { ...stored, ...bones }
+  return { ...stored, ...bones, species }
 }

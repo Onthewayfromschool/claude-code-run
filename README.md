@@ -125,8 +125,14 @@ bun run version  # 输出版本号
 ├── package.json            # 项目配置
 ├── tsconfig.json           # TypeScript 配置
 ├── dissAuth.md             # 第三方 API / 鉴权补丁说明（Kimi、跳过引导等）
+├── docs/                   # 按日的开发日志（YYYY-MM-DD.md）
+├── developerWords/         # 按日的开发者发言归档（YYYY-MM-DD.md）
 └── bun.lock                # 依赖锁文件
 ```
+
+### 日常记录（可选）
+
+维护者可用 **`docs/YYYY-MM-DD.md`** 写实现与选型、**`developerWords/YYYY-MM-DD.md`** 只归档本人发言原文。流程说明见 Cursor 技能 **`.cursor/skills/daily-record/SKILL.md`**（触发词见该文件 frontmatter 的 `description`）。
 
 ## 架构概览
 

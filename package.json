@@ -15,8 +15,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "bun run ./src/dev-entry.ts",
-    "start": "bun run ./src/dev-entry.ts",
+    "dev": "bun --feature=BUDDY run ./src/dev-entry.ts",
+    "start": "bun --feature=BUDDY run ./src/dev-entry.ts",
     "version": "bun run ./src/dev-entry.ts --version"
   },
   "dependencies": {

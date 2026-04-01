@@ -269,6 +269,8 @@ export type GlobalConfig = {
   // /buddy companion soul — bones regenerated from userId on read. See src/buddy/.
   companion?: import('../buddy/types.js').StoredCompanion
   companionMuted?: boolean
+  /** Restored CLI: force corner sprite species; unset uses roll(userId). */
+  buddySpeciesOverride?: import('../buddy/types.js').Species
 
   // Feedback survey tracking
   feedbackSurveyState?: {
